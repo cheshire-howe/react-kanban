@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import update from 'react-addons-update';
 
+import { throttle } from './utils';
 import KanbanBoard from './KanbanBoard';
 
 import 'whatwg-fetch';
@@ -18,6 +19,11 @@ class KanbanBoardContainer extends Component {
     this.state = {
       cards: []
     };
+
+    // Only call updateCardStatus when arguments change
+    this.updateCardStatus = throttle(this.updateCardStatus.bind(this));
+    // Call updateCardPosition at max every 500ms (or when arguments change)
+    this.updateCardPosition = throttle(this.updateCardPosition.bind(this), 500);
   }
 
   componentDidMount() {
@@ -157,7 +163,7 @@ class KanbanBoardContainer extends Component {
 
   updateCardStatus(cardId, listId) {
     // Find the index of the card
-    let cardIndex = this.state.cards.findIndex((card) => card.id == card.id);
+    let cardIndex = this.state.cards.findIndex((card) => card.id == cardId);
     // Get the current card
     let card = this.state.cards[cardIndex];
     // Only proceed if hovering over a different list
@@ -195,6 +201,36 @@ class KanbanBoardContainer extends Component {
     }
   }
 
+  persistCardDrag(cardId, status) {
+    // Find the index of the card
+    let cardIndex = this.state.cards.findIndex((card) => card.id == cardId);
+    // Get the current card
+    let card = this.state.cards[cardIndex];
+
+    fetch(`${API_URL}/cards/${cardId}`, {
+      method: 'put',
+      headers: API_HEADERS,
+      body: JSON.stringify({status: card.status, row_order_position: cardIndex})
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Server response wans't ok");
+      }
+    })
+    .catch((error) => {
+      console.error("Fetch error:", error);
+      this.setState(
+        update(this.state, {
+          cards: {
+            [cardIndex]: {
+              status: { $set: status }
+            }
+          }
+        })
+      );
+    });
+  }
+
   render() {
     return <KanbanBoard cards={this.state.cards}
                         taskCallbacks={{
@@ -204,7 +240,8 @@ class KanbanBoardContainer extends Component {
                         }}
                         cardCallbacks={{
                           updateStatus: this.updateCardStatus.bind(this),
-                          updatePosition: this.updateCardPosition.bind(this)
+                          updatePosition: this.updateCardPosition.bind(this),
+                          persistCardDrag: this.persistCardDrag.bind(this)
                         }} />;
   }
 }

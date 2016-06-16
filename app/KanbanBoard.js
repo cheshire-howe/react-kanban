@@ -1,4 +1,6 @@
 import React, { Component, PropTypes } from 'react';
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
 import List from './List';
 
@@ -7,17 +9,17 @@ class KanbanBoard extends Component {
     return (
       <div className="app">
 
-        <List title="To Do" taskCallbacks={this.props.taskCallbacks}
+        <List id='todo' title="To Do" taskCallbacks={this.props.taskCallbacks}
               cardCallbacks={ this.props.cardCallbacks }
               cards={ this.props.cards.filter((card) => card.status === 'todo') }
         />
 
-        <List title="In Progress" taskCallbacks={this.props.taskCallbacks}
+        <List id='in-progress' title="In Progress" taskCallbacks={this.props.taskCallbacks}
               cardCallbacks={ this.props.cardCallbacks }
               cards={ this.props.cards.filter((card) => card.status === 'in-progress') }
         />
 
-        <List title="Done" taskCallbacks={this.props.taskCallbacks}
+        <List id='done' title="Done" taskCallbacks={this.props.taskCallbacks}
               cardCallbacks={ this.props.cardCallbacks }
               cards={ this.props.cards.filter((card) => card.status === 'done') }
         />
@@ -32,4 +34,4 @@ KanbanBoard.propTypes = {
   cardCallbacks: PropTypes.object
 };
 
-export default KanbanBoard;
+export default DragDropContext(HTML5Backend)(KanbanBoard);
